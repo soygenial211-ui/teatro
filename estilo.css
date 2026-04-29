@@ -1,0 +1,225 @@
+:root {
+            --oro: #d1ccc0;
+            --fondo: #0a0a0a;
+            --panel: rgba(20, 20, 20, 0.98);
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            font-family: 'Spectral', cursive;
+            background-color: var(--fondo); color: white;
+            height: 100%; width: 100%; overflow: hidden;
+        }
+
+        /* --- PANTALLA DE INICIO --- */
+        #pantalla-inicio {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #1a1a1a 0%, #000 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 5000;
+        }
+
+        .input-nombre {
+            background: transparent; border: none; border-bottom: 2px solid var(--oro);
+            color: white; font-family: 'Special Elite', cursive; font-size: 1.5rem;
+            text-align: center; margin: 20px; outline: none; padding: 10px;
+        }
+
+        /* --- NAVEGACIÓN MAPA Y PISOS --- */
+        #vista-pisos, #vista-mapa {
+            position: absolute; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background-size: cover;
+            background-position: center;
+            transition: background-image 0.5s ease-in-out;
+        }
+
+        .grid-generico {
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px; width: 90%; max-width: 900px; padding: 20px; box-sizing: border-box;
+            border-radius: 8px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0.7));
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 40px; /* Más aire hace que se vea más formal */
+        }
+
+
+        .btn-navegacion {
+            padding: 25px 15px; border: 1px solid var(--oro);
+            background: rgba(0,0,0,0.8); color: var(--oro); cursor: pointer;
+            text-align: center; font-size: 1.2rem; transition: 0.3s;
+        }
+
+        .btn-navegacion:hover:not(.bloqueado) { background: var(--oro); color: black; }
+        .bloqueado { opacity: 0.8; cursor: not-allowed; border-color: red; color: red; }
+
+        /* --- VISTA DE SALA --- */
+        #vista-sala {
+    position: absolute; 
+    width: 100%; 
+    height: 100%;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    background-color: black; /* Fondo negro para las franjas */
+    overflow: hidden;
+}
+
+        #escena-contenedor {
+    position: relative; 
+    /* Asumiendo que tus imágenes son 16:9 (estilo Resident Evil/Cine) */
+    aspect-ratio: 16 / 9; 
+    width: 100vw;
+    max-height: 100vh;
+    height: auto;
+    background-size: 100% 100%; /* La imagen ahora SIEMPRE llena el div */
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+}
+        .hitbox {
+            position: absolute;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .hitbox:hover { background-color: rgba(255, 255, 255, 0.1); }
+
+        .hitbox-debug {
+            border: 2px solid red;
+            background-color: rgba(255, 0, 0, 0.3) !important;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; color: white; font-size: 10px;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .btn-salida-sala {
+            position: absolute; bottom: 5%; left: 50%;
+            font-family: 'Spectral', cursive;
+            transform: translateX(-50%); padding: 10px 20px;
+            background: rgba(0,0,0,0.8); color: var(--oro);
+            border: 2px solid var(--oro); cursor: pointer;
+            z-index: 20; font-family: 'Special Elite', cursive;
+            font-size: 1rem; transition: 0.3s;
+        }
+
+        .btn-salida-sala:hover { background: var(--oro); color: black; }
+
+        /* --- NUEVO SISTEMA DE INVENTARIO --- */
+        #btn-abrir-inv {
+    position: fixed; 
+    bottom: 20px; /* Cambia 'top' por 'bottom' */
+    right: 20px;  /* Cambia 'left' por 'right' */
+    z-index: 1100; 
+    background: rgba(0,0,0,0.8);
+    border: 1px solid var(--oro); 
+    color: var(--oro);
+    padding: 10px 15px; 
+    cursor: pointer;
+    font-family: 'Special Elite', cursive; 
+    font-size: 0.9rem;
+    transition: 0.3s;
+}
+
+        #btn-abrir-inv:hover { background: var(--oro); color: black; }
+
+        #pantalla-inventario {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95); z-index: 4000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        #pantalla-inventario h2 { color: var(--oro); margin-bottom: 30px; letter-spacing: 5px; }
+
+        .grid-inventario {
+    display: grid;
+    /* Esto hace que las columnas se ajusten solas según el espacio */
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px; 
+    width: 90%; 
+    max-width: 800px;
+    max-height: 60vh; 
+    overflow-y: auto; 
+    padding: 20px;
+}
+        .item-slot {
+            background: rgba(30, 30, 30, 0.5); border: 1px solid #333;
+            padding: 15px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .item-slot:hover { border-color: var(--oro); background: rgba(212, 175, 55, 0.1); }
+
+        .item-slot img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 10px; }
+
+        .item-slot span { font-size: 0.8rem; text-align: center; color: #ccc; }
+
+        .btn-cerrar-inv {
+            margin-top: 40px; background: transparent; border: 1px solid var(--oro);
+            color: var(--oro); padding: 10px 30px; cursor: pointer;
+            font-family: 'Special Elite', cursive; transition: 0.3s;
+        }
+
+        .btn-cerrar-inv:hover { background: var(--oro); color: black; }
+
+        /* --- MODALES Y PUZZLES --- */
+        #modal-interaccion {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 5000;
+            display: none; align-items: center; justify-content: center;
+        }
+
+        .modal-contenido {
+            background: #111; border: 1px solid var(--oro);
+            padding: 30px; width: 85%; max-width: 450px; text-align: center;
+        }
+
+        #contenedor-puzzle {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; z-index: 3000; display: none;
+        }
+
+        #iframe-puzzle { width: 100%; height: 100%; border: none; }
+
+        .btn-cerrar-puzzle {
+            position: absolute; top: 20px; right: 20px;
+            background: var(--oro); color: black; border: none;
+            padding: 10px 20px; cursor: pointer; font-family: inherit; z-index: 3001;
+        }
+
+        #modal-img-objeto {
+            width: 150px; height: 150px; margin: 0 auto 20px auto;
+            border: 1px solid var(--oro); display: none; 
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+        }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 600px) {
+            .grid-inventario { grid-template-columns: repeat(2, 1fr); width: 95%; }
+            .item-slot img { width: 40px; height: 40px; }
+        }
+
+        #modal-titulo {
+    color: var(--oro);
+    font-size: 1.2rem; /* Un poco más grande para el nombre */
+    letter-spacing: 3px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--oro);
+    padding-bottom: 5px;
+}
+
+/* Ajuste para móviles en vertical: Avisamos que roten */
+@media (orientation: portrait) {
+    #vista-sala::before {
+        content: "POR FAVOR, GIRA TU CELULAR ↻";
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: var(--fondo); color: var(--oro);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 9999; font-size: 1.2rem; text-align: center;
+    }
+}
+

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teatro de las marionetas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+
+    <button id="btn-abrir-inv" onclick="toggleInventario()">VER MOCHILA</button>
+
+    <div id="pantalla-inventario">
+        <h2>MOCHILA</h2>
+        <div id="grid-objetos" class="grid-inventario">
+            </div>
+        <button class="btn-cerrar-inv" onclick="toggleInventario()">[ VOLVER AL JUEGO ]</button>
+    </div>
+
+    <div id="pantalla-inicio" class="hidden">
+        <h2 style="color: var(--oro); margin-bottom: 5px;">BIENVENIDO AL TEATRO</h2>
+        <p style="font-size: 0.8rem; opacity: 0.7;">REGISTRE SU NOMBRE EN RECEPCIÓN</p>
+        <input type="text" id="input-usuario" class="input-nombre" placeholder="..." maxlength="15">
+        <button onclick="iniciarJuego()" class="btn-navegacion" style="width: 200px;">ENTRAR</button>
+    </div>
+
+    <div id="contenedor-puzzle">
+        <button class="btn-cerrar-puzzle" onclick="cerrarPuzzle()">X CERRAR</button>
+        <iframe id="iframe-puzzle" src=""></iframe>
+    </div>
+
+    <div id="modal-interaccion" onclick="cerrarModal()">
+        <div class="modal-contenido" onclick="event.stopPropagation()">
+            <div id="modal-titulo" style="color: var(--oro); font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 15px;">INFORMACIÓN</div>
+            <div id="modal-img-objeto"></div>
+            <p id="modal-texto" style="margin: 20px 0; white-space: pre-line;"></p>
+            <button onclick="cerrarModal()" style="background: var(--oro); border: none; padding: 10px 20px; cursor: pointer; font-family: inherit;">CONTINUAR</button>
+        </div>
+    </div>
+
+    <div id="vista-pisos" class="hidden">
+        <h1 style="color: var(--oro); text-shadow: 2px 2px 4px black;">BIENVENIDO AL TEATRO DE LAS ALMAS PERDIDAS</h1>
+        <h2 style="color: var(--oro); text-shadow: 2px 2px 4px black;">Elije un piso para ir</h2>
+        <div class="grid-generico" id="grid-pisos"></div>
+    </div>
+
+    <div id="vista-mapa" class="hidden">
+        <h1 id="titulo-piso" style="color: var(--oro); text-shadow: 2px 2px 4px black;">PISO</h1>
+        <div class="grid-generico" id="grid-lugares"></div>
+        <button onclick="irAPisos()" class="btn-navegacion" style="margin-top: 30px; background: transparent; color: white; border: 1px solid white;">[ VOLVER A PISOS ]</button>
+    </div>
+
+    <div id="vista-sala" class="hidden">
+        <div id="escena-contenedor"></div>
+    </div>
+
+    <script>
+    // Esto debe ir ANTES de cargar los archivos externos
+    var interaccionActual = null; 
+    var MODO_DEBUG = false;
+    var nombreJugador = "";
+</script>
+
+    <script src="objetos.js"></script>
+    <script src="flags.js"></script>
+    <script src="pisos.js"></script>
+    <script src="lugares.js"></script>
+
+    <script>
+
+        const ID_SALA_INICIAL = "aaa"; 
+        const INVENTARIO_INICIAL = [];
+
+        let inventario = [];
+
+        function toggleInventario() {
+            const pantalla = document.getElementById('pantalla-inventario');
+            pantalla.style.display = (pantalla.style.display === "flex") ? "none" : "flex";
+        }
+
+        function verificarRequisitos(obj) {
+            if (!obj.requisitos) return { bloqueado: false };
+            const reqFlag = obj.requisitos.flag;
+            const reqItem = obj.requisitos.item;
+            const faltaFlag = reqFlag && !FLAGS[reqFlag];
+            const faltaItem = reqItem && !inventario.includes(reqItem);
+            if (faltaFlag && faltaItem) return { bloqueado: true, msg: obj.mensajes?.faltaAmbos || "Faltan requisitos." };
+            if (faltaItem) return { bloqueado: true, msg: obj.mensajes?.faltaItem || "Falta un objeto." };
+            if (faltaFlag) return { bloqueado: true, msg: obj.mensajes?.faltaFlag || "Falta activar algo." };
+            return { bloqueado: false };
+        }
+
+        function checkInicio() {
+            if (INVENTARIO_INICIAL.length > 0) INVENTARIO_INICIAL.forEach(id => añadirAlInventario(id));
+            if (MODO_DEBUG) { nombreJugador = "Tester"; saltarASalaOPrincipal(); }
+            else document.getElementById('pantalla-inicio').classList.remove('hidden');
+        }
+
+        function iniciarJuego() {
+            const input = document.getElementById('input-usuario');
+            if (input.value.trim() === "") return;
+            nombreJugador = input.value.trim();
+            document.getElementById('pantalla-inicio').classList.add('hidden');
+            saltarASalaOPrincipal();
+        }
+
+        function saltarASalaOPrincipal() {
+            if (ID_SALA_INICIAL) {
+                const sala = LUGARES.find(l => l.id === ID_SALA_INICIAL);
+                if (sala) { entrarASala(sala); return; }
+            }
+            document.getElementById('vista-pisos').classList.remove('hidden');
+            renderizarPisos();
+        }
+
+        function renderizarPisos() {
+            const grid = document.getElementById('grid-pisos');
+            grid.innerHTML = "";
+            PISOS.forEach(piso => {
+                const check = verificarRequisitos(piso);
+                const btn = document.createElement('div');
+                btn.className = `btn-navegacion ${check.bloqueado ? 'bloqueado' : ''}`;
+                btn.innerHTML = `<strong>${check.bloqueado ? "🔒 " : ""}${piso.nombre}</strong>`;
+                btn.onclick = () => check.bloqueado ? abrirModal(check.msg) : mostrarMapaPiso(piso);
+                grid.appendChild(btn);
+            });
+        }
+
+        function mostrarMapaPiso(piso) {
+            document.querySelectorAll('#vista-pisos, #vista-sala').forEach(v => v.classList.add('hidden'));
+            document.getElementById('vista-mapa').classList.remove('hidden');
+            document.getElementById('vista-mapa').style.backgroundImage = `url('lugares/${piso.imgFondo}')`;
+            document.getElementById('titulo-piso').innerText = piso.nombre;
+            const grid = document.getElementById('grid-lugares');
+            grid.innerHTML = "";
+            LUGARES.filter(l => l.pisoId === piso.id).forEach(lugar => {
+                const check = verificarRequisitos(lugar);
+                const btn = document.createElement('div');
+                btn.className = `btn-navegacion ${check.bloqueado ? 'bloqueado' : ''}`;
+                btn.innerHTML = `<strong>${check.bloqueado ? "🔒 " : ""}${lugar.nombre}</strong>`;
+                btn.onclick = () => check.bloqueado ? abrirModal(check.msg) : entrarASala(lugar);
+                grid.appendChild(btn);
+            });
+        }
+
+        function entrarASala(lugar) {
+            document.querySelectorAll('#vista-pisos, #vista-mapa').forEach(v => v.classList.add('hidden'));
+            document.getElementById('vista-sala').classList.remove('hidden');
+            document.getElementById('escena-contenedor').style.backgroundImage = `url('lugares/${lugar.imgFondo}')`;
+            actualizarBotonesSala(lugar);
+        }
+
+        function actualizarBotonesSala(lugar) {
+            const escena = document.getElementById('escena-contenedor');
+            escena.innerHTML = "";
+            lugar.interacciones.forEach(inter => {
+                const hitbox = document.createElement('div');
+                hitbox.className = 'hitbox';
+                if (MODO_DEBUG) { hitbox.classList.add('hitbox-debug'); hitbox.innerText = inter.nombre; }
+                if (inter.area) {
+                    hitbox.style.top = inter.area.top; hitbox.style.left = inter.area.left;
+                    hitbox.style.width = inter.area.ancho; hitbox.style.height = inter.area.alto;
+                } else if (MODO_DEBUG) {
+                    hitbox.style.top = "5%"; hitbox.style.left = "5%";
+                    hitbox.style.width = "20%"; hitbox.style.height = "10%";
+                } else { hitbox.style.display = 'none'; }
+                hitbox.onclick = () => procesarInteraccion(inter, lugar);
+                escena.appendChild(hitbox);
+            });
+            const btnSalir = document.createElement('button');
+            btnSalir.className = 'btn-salida-sala'; btnSalir.innerText = "[ SALIR AL PASILLO ]";
+            btnSalir.onclick = irAlMapa; escena.appendChild(btnSalir);
+        }
+
+        function procesarInteraccion(inter, lugar) {
+            const check = verificarRequisitos(inter);
+            if (check.bloqueado) { abrirModal(check.msg); return; }
+            if (inter.mensajeGeneral) {
+    abrirModal(inter.mensajeGeneral, null, inter.nombre); // Añadimos inter.nombre al final
+    if (inter.recompensa && !inter.completada) completarAccion(inter, lugar, true);
+    return;
+}
+            if (inter.completada && !inter.persistente) { abrirModal("Ya no hay nada más que hacer aquí."); return; }
+            if (inter.archivoPuzzle) lanzarPuzzle(inter, lugar);
+            else completarAccion(inter, lugar, false);
+        }
+
+        function lanzarPuzzle(interData, lugarNombre) {
+    interaccionActual = { data: interData, lugar: lugarNombre };
+    const iframe = document.getElementById('iframe-puzzle');
+
+    if (iframe) {
+        iframe.src = interData.archivoPuzzle;
+        document.getElementById('contenedor-puzzle').style.display = 'flex';
+
+        iframe.onload = () => {
+            // Enviamos siempre 'configPuzzle', si no existe enviamos null
+            iframe.contentWindow.postMessage({ 
+                type: 'INICIAR_PUZZLE', 
+                config: interData.configPuzzle || null 
+            }, '*');
+        };
+    }
+}
+
+        function completarAccion(inter, lugar, esSilenciosa) {
+    let textoExito = inter.mensajes?.mensajeExito || "";
+    let esVictoriaFinal = inter.esSalida; // Detectamos si es la salida
+    let txt = esVictoriaFinal ? `¡ESCAPASTE CON ÉXITO, ${nombreJugador.toUpperCase()}!\n\n${textoExito}` : textoExito;
+    
+    let imagenAMostrar = null; 
+
+    if (inter.recompensa?.flag) {
+        const idFlag = inter.recompensa.flag;
+        FLAGS[idFlag] = true;
+        imagenAMostrar = `flags/${idFlag}.png`;
+    }
+    
+    if (inter.recompensa?.item) {
+        const idItem = inter.recompensa.item;
+        añadirAlInventario(idItem);
+        txt += `\n\n Has obtenido: [ ${CATALOGO_OBJETOS[idItem].nombre} ]`;
+        imagenAMostrar = `items/${CATALOGO_OBJETOS[idItem].img}`;
+    }
+
+    if (!esSilenciosa && txt.trim() !== "") {
+        // Si es victoria final, ocultamos el botón de inventario para que no estorbe
+        if (esVictoriaFinal) {
+            document.getElementById('btn-abrir-inv').style.display = 'none';
+        }
+        abrirModal(txt, imagenAMostrar, inter.nombre, esVictoriaFinal); 
+    }
+    
+    inter.completada = true;
+    actualizarBotonesSala(lugar);
+    renderizarPisos();
+}
+
+        function añadirAlInventario(idItem) {
+            if (!inventario.includes(idItem)) {
+                inventario.push(idItem);
+                const itemData = CATALOGO_OBJETOS[idItem];
+                const grid = document.getElementById('grid-objetos');
+                const slot = document.createElement('div');
+                slot.className = "item-slot";
+               slot.onclick = () => { 
+    toggleInventario(); 
+    abrirModal(itemData.descripcion, `items/${itemData.img}`, itemData.nombre); 
+};
+                slot.innerHTML = `<img src="items/${itemData.img}"> <span>${itemData.nombre}</span>`;
+                grid.appendChild(slot);
+            }
+        }
+
+        function abrirModal(texto, img = null, titulo = "INFORMACIÓN", esVictoria = false) {
+    document.getElementById('modal-texto').innerText = texto;
+    document.getElementById('modal-titulo').innerText = titulo.toUpperCase();
+    
+    const elImg = document.getElementById('modal-img-objeto');
+    if (img) { 
+        elImg.style.backgroundImage = `url('${img}')`; 
+        elImg.style.display = "block"; 
+    } else { 
+        elImg.style.display = "none"; 
+    }
+
+    const btnCerrar = document.querySelector('#modal-interaccion button');
+    
+    if (esVictoria) {
+        // En lugar de display: none, usamos visibility
+        // Esto hace que el botón sea invisible pero siga ocupando su lugar
+        btnCerrar.style.visibility = "hidden"; 
+        document.getElementById('modal-interaccion').onclick = null;
+    } else {
+        btnCerrar.style.visibility = "visible";
+        document.getElementById('modal-interaccion').onclick = cerrarModal;
+    }
+
+    document.getElementById('modal-interaccion').style.display = "flex";
+}
+
+        function cerrarModal() { document.getElementById('modal-interaccion').style.display = "none"; }
+        function cerrarPuzzle() { document.getElementById('contenedor-puzzle').style.display = "none"; }
+        function irAPisos() { document.getElementById('vista-mapa').classList.add('hidden'); document.getElementById('vista-pisos').classList.remove('hidden'); renderizarPisos(); }
+        function irAlMapa() { document.getElementById('vista-sala').classList.add('hidden'); document.getElementById('vista-mapa').classList.remove('hidden'); }
+
+        window.onload = checkInicio;
+
+
+
+        // HERRAMIENTA DE MAPEADO
+const contenedor = document.getElementById('escena-contenedor');
+if(contenedor) {
+    contenedor.addEventListener('mousedown', (e) => {
+        const rect = contenedor.getBoundingClientRect();
+        // Calculamos posición inicial en %
+        const xStart = ((e.clientX - rect.left) / rect.width * 100).toFixed(2);
+        const yStart = ((e.clientY - rect.top) / rect.height * 100).toFixed(2);
+
+        const alSoltar = (upEvent) => {
+            const xEnd = ((upEvent.clientX - rect.left) / rect.width * 100).toFixed(2);
+            const yEnd = ((upEvent.clientY - rect.top) / rect.height * 100).toFixed(2);
+            
+            const ancho = Math.abs(xEnd - xStart).toFixed(2);
+            const alto = Math.abs(yEnd - yStart).toFixed(2);
+
+            // Generamos el texto para el JSON
+            const resultado = `area: { top: "${yStart}%", left: "${xStart}%", ancho: "${ancho}%", alto: "${alto}%" },`;
+            
+            console.log("%c--- COORDENADAS PARA DATOS.JS ---", "color: yellow; font-weight: bold;");
+            console.log(resultado);
+            
+            window.removeEventListener('mouseup', alSoltar);
+        };
+        window.addEventListener('mouseup', alSoltar);
+    });
+}
+
+
+
+    </script>
+</body>
+</html>
