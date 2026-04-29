@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Melodía del Silencio</title>
+    <style>
+        :root {
+            --bg: #f4f1ea;
+            --piano-body: #2c2c2c;
+            --ivory: #ffffff;
+            --ebony: #1a1a1a;
+            --blood: #b22222;
+            --success: #2ecc71;
+        }
+
+        body {
+            background-color: #dcd7c9;
+            font-family: serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        /* Partitura */
+        .sheet-music {
+            background: var(--bg);
+            padding: 20px 40px;
+            border: 2px solid #8d7d66;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+            text-align: center;
+            border-radius: 4px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .staff {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            position: relative;
+            border-top: 2px solid #333;
+            border-bottom: 2px solid #333;
+            padding: 10px 0;
+        }
+
+        .note-spot {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: 2px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            transition: all 0.3s;
+        }
+
+        .note-spot.active {
+            border-color: var(--blood);
+            color: var(--blood);
+            background: rgba(178, 34, 34, 0.1);
+            border-style: solid;
+        }
+
+        /* Piano */
+        .piano-container {
+            background: var(--piano-body);
+            padding: 20px 10px 10px 10px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            position: relative;
+        }
+
+        .key {
+            cursor: pointer;
+            position: relative;
+            transition: background 0.1s;
+        }
+
+        .white {
+            width: 50px;
+            height: 180px;
+            background: var(--ivory);
+            border: 1px solid #ccc;
+            border-radius: 0 0 5px 5px;
+            z-index: 1;
+        }
+
+        .black {
+            width: 30px;
+            height: 110px;
+            background: var(--ebony);
+            margin-left: -15px;
+            margin-right: -15px;
+            z-index: 2;
+            border-radius: 0 0 3px 3px;
+        }
+
+        /* Estados */
+        .white.pressed { background: #eee; transform: translateY(2px); }
+        .black.pressed { background: #333; transform: translateY(2px); }
+        
+        .correct-flash { background: var(--success) !important; }
+        .wrong-flash { background: var(--blood) !important; }
+
+        #status-msg {
+            margin-top: 25px;
+            font-weight: bold;
+            color: var(--blood);
+            height: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .hint { font-size: 0.8em; color: #777; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>La Partitura del Silencio</h1>
+    
+    <div class="sheet-music">
+        <div class="hint">Sigue la secuencia de las 7 sombras</div>
+        <div class="staff" id="staff">
+            <div class="note-spot" id="s0">?</div>
+            <div class="note-spot" id="s1">?</div>
+            <div class="note-spot" id="s2">?</div>
+            <div class="note-spot" id="s3">?</div>
+            <div class="note-spot" id="s4">?</div>
+            <div class="note-spot" id="s5">?</div>
+            <div class="note-spot" id="s6">?</div>
+        </div>
+    </div>
+
+    <div class="piano-container">
+        <div class="key white" data-note="C"></div>
+        <div class="key black" data-note="C#"></div>
+        <div class="key white" data-note="D"></div>
+        <div class="key black" data-note="D#"></div>
+        <div class="key white" data-note="E"></div>
+        <div class="key white" data-note="F"></div>
+        <div class="key black" data-note="F#"></div>
+        <div class="key white" data-note="G"></div>
+        <div class="key black" data-note="G#"></div>
+        <div class="key white" data-note="A"></div>
+        <div class="key black" data-note="A#"></div>
+        <div class="key white" data-note="B"></div>
+    </div>
+
+    <div id="status-msg"></div>
+
+    <script>
+        // Secuencia correcta: RE - FA - LA - SOL - DO# - MI - RE
+        // (D - F - A - G - C# - E - D)
+        const solution = ['D', 'F', 'A', 'G', 'C#', 'E', 'D'];
+        let currentStep = 0;
+        let canPlay = true;
+
+        const keys = document.querySelectorAll('.key');
+        const spots = document.querySelectorAll('.note-spot');
+        const statusMsg = document.getElementById('status-msg');
+
+        keys.forEach(key => {
+            key.addEventListener('mousedown', () => playNote(key));
+            key.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                playNote(key);
+            });
+        });
+
+        function playNote(key) {
+            if (!canPlay) return;
+
+            const note = key.getAttribute('data-note');
+            key.classList.add('pressed');
+
+            if (note === solution[currentStep]) {
+                // Acierto
+                const spot = document.getElementById(`s${currentStep}`);
+                spot.innerText = note;
+                spot.classList.add('active');
+                
+                currentStep++;
+
+                if (currentStep === solution.length) {
+                    victory();
+                }
+            } else {
+                // Error
+                wrongNote(key);
+            }
+
+            setTimeout(() => key.classList.remove('pressed'), 150);
+        }
+
+        function wrongNote(key) {
+            canPlay = false;
+            key.classList.add('wrong-flash');
+            statusMsg.innerText = "MELODÍA ROTA - REINICIANDO";
+
+            setTimeout(() => {
+                key.classList.remove('wrong-flash');
+                resetPuzzle();
+                canPlay = true;
+            }, 800);
+        }
+
+        function resetPuzzle() {
+            currentStep = 0;
+            statusMsg.innerText = "";
+            spots.forEach(spot => {
+                spot.innerText = "?";
+                spot.classList.remove('active');
+            });
+        }
+
+        // --- REEMPLAZAR TU FUNCIÓN victory() CON ESTA ---
+
+function victory() {
+    canPlay = false;
+    statusMsg.style.color = "#2ecc71";
+    statusMsg.innerText = "EL SILENCIO SE HA ROTO";
+    
+    // Retroalimentación visual
+    keys.forEach(k => k.classList.add('correct-flash'));
+
+    // --- CONEXIÓN CON EL SISTEMA PRINCIPAL ---
+    const padre = window.parent;
+    if (padre && padre.interaccionActual) {
+        // Notificar éxito
+        padre.completarAccion(padre.interaccionActual.data, padre.interaccionActual.lugar, false);
+        
+        // Cerrar el iframe después de un breve delay para ver la victoria
+        setTimeout(() => {
+            if(padre.cerrarPuzzle) padre.cerrarPuzzle();
+        }, 1500);
+    }
+}
+
+// Escuchar mensaje de inicio
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'INICIAR_PUZZLE') {
+        resetPuzzle();
+    }
+});
+
+        // --- AÑADIR AL FINAL DE TU <SCRIPT> ---
+
+function checkSolution() {
+    let correct = 0;
+    document.querySelectorAll('.sin-slot').forEach(slot => {
+        const char = slot.querySelector('.character');
+        if (char && char.getAttribute('data-target') === slot.getAttribute('data-sin')) correct++;
+    });
+
+    const msg = document.getElementById('message');
+    if (correct === 7) {
+        msg.style.color = "green";
+        msg.innerText = "¡VOTOS CUMPLIDOS!";
+        finalizarPuzzle(); // <--- LLAMADA DE CONEXIÓN
+    } else {
+        msg.style.color = "#b22222";
+        msg.innerText = "Aciertos: " + correct + "/7";
+    }
+}
+
+function finalizarPuzzle() {
+    const padre = window.parent;
+    if (padre && padre.interaccionActual) {
+        // Envía la señal de completar al sistema principal
+        padre.completarAccion(padre.interaccionActual.data, padre.interaccionActual.lugar, false);
+        setTimeout(() => {
+            if(padre.cerrarPuzzle) padre.cerrarPuzzle();
+        }, 1500);
+    }
+}
+
+// Escuchar inicio desde el principal (opcional para configuraciones extra)
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'INICIAR_PUZZLE') {
+        console.log("Puzzle de Pecados iniciado");
+    }
+});
+
+
+    </script>
+</body>
+</html>

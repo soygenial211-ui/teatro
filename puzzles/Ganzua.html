@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cerradura de Hotel - Caos Sincronizado</title>
+    <style>
+        :root {
+            --iron: #34495e;
+            --brass: #e67e22;
+            --glow: #00ff88;
+            --slot-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background: #0a0a0a;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Verdana', sans-serif;
+            touch-action: manipulation;
+            color: #eee;
+        }
+
+        #game-header {
+            text-align: center;
+            margin-bottom: 2vh;
+        }
+
+        #status {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #888;
+            transition: color 0.3s;
+        }
+
+        #lock-container {
+            display: flex;
+            background: #1a1a1a;
+            padding: 20px;
+            border: 6px solid var(--iron);
+            border-radius: 15px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.9);
+            width: 85vw;
+            max-width: 600px;
+            height: 50vh;
+            justify-content: center;
+            align-items: flex-end;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .track {
+            flex: 1; /* Esto hace que se ajusten automáticamente */
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            margin: 0 5px; /* Espaciado dinámico */
+            border-radius: 4px;
+            position: relative;
+            border: 1px solid #222;
+        }
+
+        .perno {
+            width: 100%;
+            height: 40px; /* Un poco más corto para que quepa en el slot */
+            background: var(--brass);
+            position: absolute;
+            bottom: 0;
+            border-radius: 4px;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.3);
+            transition: bottom 0.05s linear; 
+            z-index: 2;
+        }
+
+        /* El "Slot" o Zona de Éxito - Ahora es más grande */
+        .target-slot {
+            position: absolute;
+            width: 100%;
+            height: 60px; /* SLOT MÁS GRANDE */
+            background: var(--slot-bg);
+            border-top: 2px solid rgba(255,255,255,0.1);
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            pointer-events: none;
+            z-index: 1;
+            transition: background 0.2s;
+        }
+
+        /* Estado: Perno dentro del Slot */
+        .track.active .perno {
+            background: #f39c12; /* Color intermedio */
+        }
+
+        .track.active .target-slot {
+            background: rgba(0, 255, 136, 0.15);
+            border-color: rgba(0, 255, 136, 0.5);
+        }
+
+        /* UI de Victoria */
+        .win-glow {
+            color: var(--glow) !important;
+            text-shadow: 0 0 10px var(--glow);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-header">
+        <div id="status">Mantenlos todos en la zona</div>
+    </div>
+
+    <div id="lock-container">
+        </div>
+
+<script>
+    // --- CONFIGURACIÓN DE DIFICULTAD AJUSTABLE ---
+    const CONFIG = {
+        numPernos: 4,        // <--- AJUSTA ESTO (3, 5, 7, etc.)
+        gravity: 0.09,       // Velocidad de caída
+        impulse: 18,        // Fuerza del toque
+        slotHeight: 60,     // Altura visual del slot (px)
+        winTimeNeeded: 100 // Tiempo (ms) que deben estar todos alineados
+    };
+
+    const lockContainer = document.getElementById('lock-container');
+    const statusEl = document.getElementById('status');
+    let pernosData = [];
+    let winTimer = null; // Para verificar si se mantiene la victoria
+
+    // --- INICIALIZACIÓN DINÁMICA ---
+    function initLock() {
+        lockContainer.innerHTML = ''; // Limpiar
+        pernosData = [];
+
+        for (let i = 0; i < CONFIG.numPernos; i++) {
+            // Crear datos lógicos con targets aleatorios
+            // Target entre 20% y 70% de la altura para que sean alcanzables
+            const targetCenter = Math.random() * (70 - 20) + 20;
+            
+            pernosData.push({
+                id: i,
+                current: 0,
+                targetCenter: targetCenter,
+                inSlot: false
+            });
+
+            // Crear elementos HTML
+            const track = document.createElement('div');
+            track.className = 'track';
+            track.id = `track-${i}`;
+
+            const slot = document.createElement('div');
+            slot.className = 'target-slot';
+            // Centrar el slot visualmente respecto al targetCenter lógico
+            // Convertimos la altura de px a % aproximado para el layout (simplificado)
+            const slotHeightPercent = (CONFIG.slotHeight / lockContainer.offsetHeight) * 100;
+            slot.style.height = CONFIG.slotHeight + 'px';
+            slot.style.bottom = (targetCenter - (slotHeightPercent / 2)) + '%';
+
+            const pernoEl = document.createElement('div');
+            pernoEl.className = 'perno';
+            pernoEl.id = `perno-${i}`;
+
+            track.appendChild(slot);
+            track.appendChild(pernoEl);
+
+            // Evento Táctil
+            track.addEventListener('pointerdown', () => impulsePerno(i));
+            
+            lockContainer.appendChild(track);
+        }
+    }
+
+    // --- LÓGICA DE JUEGO ---
+
+    function impulsePerno(id) {
+        let p = pernosData[id];
+        p.current += CONFIG.impulse;
+        if (p.current > 100) p.current = 100; // Límite techo
+    }
+
+    // Bucle Principal de Física (Gravedad y Chequeo)
+    function update() {
+        let allActive = true;
+
+        pernosData.forEach(p => {
+            // 1. Aplicar Gravedad (Siempre, incluso si está en el slot)
+            if (p.current > 0) {
+                p.current -= CONFIG.gravity;
+                if (p.current < 0) p.current = 0;
+            }
+
+            // Actualizar visualmente
+            const pernoEl = document.getElementById(`perno-${p.id}`);
+            const trackEl = document.getElementById(`track-${p.id}`);
+            pernoEl.style.bottom = p.current + '%';
+
+            // 2. Chequear si está en el SLOT
+            // Definimos el rango lógico del slot (el perno es un punto, el slot es un rango)
+            const slotRange = 8; // Margen lógico (+/- 8% del centro)
+            
+            if (p.current >= p.targetCenter - slotRange && p.current <= p.targetCenter + slotRange) {
+                if (!p.inSlot) {
+                    p.inSlot = true;
+                    trackEl.classList.add('active');
+                    // Aquí podrías poner un sonido leve de "clic de roce"
+                }
+            } else {
+                if (p.inSlot) {
+                    p.inSlot = false;
+                    trackEl.classList.remove('active');
+                }
+            }
+
+            if (!p.inSlot) allActive = false;
+        });
+
+        // 3. Gestión de la Condición de Victoria (Sincronización)
+        if (allActive) {
+            statusEl.textContent = "¡Sosteniendo...!";
+            statusEl.classList.add('win-glow');
+            
+            // Si todos están activos y no hay timer, empezar a contar
+            if (!winTimer) {
+                winTimer = setTimeout(triggerWin, CONFIG.winTimeNeeded);
+            }
+        } else {
+            statusEl.textContent = "Mantenlos todos en la zona";
+            statusEl.classList.remove('win-glow');
+            // Si uno cae, resetear el timer de victoria
+            if (winTimer) {
+                clearTimeout(winTimer);
+                winTimer = null;
+            }
+        }
+
+        requestAnimationFrame(update);
+    }
+
+    function triggerWin() {
+    if (pernosData.every(p => p.inSlot)) {
+        statusEl.textContent = "¡CERRADURA ABIERTA!";
+        CONFIG.gravity = 0; 
+        
+        // --- LLAMADA AL PADRE ---
+        const padre = window.parent;
+        if (padre && padre.interaccionActual) {
+            padre.completarAccion(padre.interaccionActual.data, padre.interaccionActual.lugar, false);
+            setTimeout(() => {
+                padre.cerrarPuzzle();
+            }, 1500);
+        }
+    }
+}
+
+    // Iniciar
+    initLock();
+    // Ajustar targets si se cambia el tamaño de ventana (opcional)
+    window.addEventListener('resize', initLock); 
+    update();
+
+    // En lugares.js podrías tener: "dificultad": { "winTime": 1000, "gravity": 0.5 }
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'INICIAR_PUZZLE') {
+        const c = event.data.config;
+        // Si mandas un número, puede ser la dificultad
+        if(typeof c === 'number') CONFIG.gravity = c;
+    }
+});
+
+function finalizarPuzzle() {
+    const padre = window.parent;
+    if (padre && padre.interaccionActual) {
+        padre.completarAccion(padre.interaccionActual.data, padre.interaccionActual.lugar, false);
+        setTimeout(() => padre.cerrarPuzzle(), 1000);
+    }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votos de Silencio - Panel Móvil</title>
+    <style>
+        :root {
+            --bg-ui: #f4f1ea;
+            --card-border: #8d7d66;
+            --accent-red: #b22222;
+            --text-main: #2c2c2c;
+        }
+
+        body {
+            background-color: #dcd7c9;
+            color: var(--text-main);
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 10px;
+            min-height: 100vh;
+        }
+
+        h1 { 
+            font-family: serif;
+            color: var(--accent-red); 
+            font-size: 1.8em;
+            margin: 10px 0 5px 0;
+            text-align: center;
+        }
+
+        .instruction {
+            font-style: italic;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column; /* Apilado en móvil por defecto */
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        @media (min-width: 768px) {
+            .game-container { flex-direction: row; align-items: flex-start; }
+            .column { flex: 1; }
+        }
+
+        .column-header {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            color: #5d5448;
+        }
+
+        /* Contenedor de origen de personajes */
+        #characters-pool {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        /* Ficha del Personaje */
+        .character {
+            background: var(--bg-ui);
+            border: 2px solid var(--card-border);
+            padding: 8px;
+            cursor: grab;
+            border-radius: 4px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 70px; /* Altura fija para encajar perfecto */
+            box-sizing: border-box;
+        }
+
+        .character strong { font-size: 0.85em; display: block; color: var(--accent-red); }
+        .character-detail { font-size: 0.7em; color: #666; line-height: 1.1; }
+
+        /* Slots de Pecados */
+        .sin-slots-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sin-slot {
+            width: 100%;
+            height: 90px; /* Un poco más alto que el personaje para el label */
+            background: #e9e5d8;
+            border: 2px dashed #b7b09e;
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            align-items: flex-end; /* Deja espacio para el icono arriba */
+            justify-content: center;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        .sin-label-box {
+            position: absolute;
+            top: 5px;
+            left: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .sin-icon { font-size: 1.2em; }
+        .sin-name { font-weight: bold; font-size: 0.8em; text-transform: uppercase; color: #777; }
+
+        /* Cuando el personaje cae dentro */
+        .sin-slot .character {
+            width: 100%;
+            height: 60px; /* Ajuste para que quepa bajo el label del pecado */
+            margin: 0;
+            box-shadow: none;
+        }
+
+        .on-drag-over { background: #fff; border-color: var(--accent-red); }
+
+        #message {
+            margin: 15px 0;
+            font-weight: bold;
+            text-align: center;
+            min-height: 20px;
+        }
+
+        .btn-check {
+            background: var(--accent-red);
+            color: white;
+            border: none;
+            padding: 15px;
+            width: 100%;
+            max-width: 300px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 50px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>VOTOS DE SILENCIO</h1>
+    <p class="instruction">"Cada secreto busca su asiento."</p>
+
+    <div class="game-container">
+        <div class="column">
+            <div class="column-header">Invitados</div>
+            <div id="characters-pool">
+                <div class="character" draggable="true" id="char1" data-target="gula">
+                    <strong>El Cocinero</strong>
+                    <span class="character-detail">Saboreó la traición.</span>
+                </div>
+                <div class="character" draggable="true" id="char2" data-target="avaricia">
+                    <strong>El Padrino</strong>
+                    <span class="character-detail">Manos ajenas.</span>
+                </div>
+                <div class="character" draggable="true" id="char3" data-target="soberbia">
+                    <strong>La Madre</strong>
+                    <span class="character-detail">Espejo roto.</span>
+                </div>
+                <div class="character" draggable="true" id="char4" data-target="pereza">
+                    <strong>El Anciano</strong>
+                    <span class="character-detail">Testigo inmóvil.</span>
+                </div>
+                <div class="character" draggable="true" id="char5" data-target="envidia">
+                    <strong>El Chofer</strong>
+                    <span class="character-detail">Deseo al volante.</span>
+                </div>
+                <div class="character" draggable="true" id="char6" data-target="lujuria">
+                    <strong>El Novio</strong>
+                    <span class="character-detail">Aroma prohibido.</span>
+                </div>
+                <div class="character" draggable="true" id="char7" data-target="ira">
+                    <strong>La Novia</strong>
+                    <span class="character-detail">Sangre y fuego.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="column">
+            <div class="column-header">Sentencias</div>
+            <div class="sin-slots-container">
+                <div class="sin-slot" data-sin="gula"><div class="sin-label-box"><span class="sin-icon">🍎</span><span class="sin-name">Gula</span></div></div>
+                <div class="sin-slot" data-sin="avaricia"><div class="sin-label-box"><span class="sin-icon">💰</span><span class="sin-name">Avaricia</span></div></div>
+                <div class="sin-slot" data-sin="soberbia"><div class="sin-label-box"><span class="sin-icon">💎</span><span class="sin-name">Soberbia</span></div></div>
+                <div class="sin-slot" data-sin="pereza"><div class="sin-label-box"><span class="sin-icon">☁️</span><span class="sin-name">Pereza</span></div></div>
+                <div class="sin-slot" data-sin="envidia"><div class="sin-label-box"><span class="sin-icon">🐍</span><span class="sin-name">Envidia</span></div></div>
+                <div class="sin-slot" data-sin="lujuria"><div class="sin-label-box"><span class="sin-icon">💋</span><span class="sin-name">Lujuria</span></div></div>
+                <div class="sin-slot" data-sin="ira"><div class="sin-label-box"><span class="sin-icon">🗡️</span><span class="sin-name">Ira</span></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="message"></div>
+    <button class="btn-check" onclick="checkSolution()">VALIDAR</button>
+
+    <script>
+        const characters = document.querySelectorAll('.character');
+        const slots = document.querySelectorAll('.sin-slot');
+        let draggedItem = null;
+
+        // Soporte para Touch (Móviles)
+        characters.forEach(char => {
+            char.addEventListener('dragstart', function() {
+                draggedItem = this;
+                this.style.opacity = '0.4';
+            });
+            char.addEventListener('dragend', function() {
+                this.style.opacity = '1';
+            });
+        });
+
+        slots.forEach(slot => {
+            slot.addEventListener('dragover', e => e.preventDefault());
+            slot.addEventListener('dragenter', function() { this.classList.add('on-drag-over'); });
+            slot.addEventListener('dragleave', function() { this.classList.remove('on-drag-over'); });
+            slot.addEventListener('drop', function() {
+                this.classList.remove('on-drag-over');
+                const existingChar = this.querySelector('.character');
+                if (existingChar) document.getElementById('characters-pool').appendChild(existingChar);
+                this.appendChild(draggedItem);
+            });
+        });
+
+        function checkSolution() {
+            let correct = 0;
+            document.querySelectorAll('.sin-slot').forEach(slot => {
+                const char = slot.querySelector('.character');
+                if (char && char.getAttribute('data-target') === slot.getAttribute('data-sin')) correct++;
+            });
+            
+            const msg = document.getElementById('message');
+            
+            if (correct === 7) {
+                msg.style.color = "green";
+                msg.innerText = "¡VOTOS CUMPLIDOS!";
+                finalizarPuzzle(); // <--- Llamada a la conexión
+            } else {
+                msg.style.color = "#b22222";
+                msg.innerText = "Aciertos: " + correct + "/7";
+            }
+        }
+
+        // --- CONEXIÓN CON EL HOTEL (INDEX.HTML) ---
+        
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'INICIAR_PUZZLE') {
+                console.log("Maqueta lista y vinculada.");
+                // Aquí podrías usar event.data.config si necesitaras configurar algo inicial
+            }
+        });
+
+        function finalizarPuzzle() {
+            const padre = window.parent;
+            // Verificamos que exista el padre y la función de completar acción
+            if (padre && padre.interaccionActual) {
+                // Ejecuta la recompensa y lógica en el index.html
+                padre.completarAccion(padre.interaccionActual.data, padre.interaccionActual.lugar, false);
+                
+                // Cerramos el puzzle tras un pequeño delay para que el usuario vea el mensaje de éxito
+                setTimeout(() => {
+                    padre.cerrarPuzzle();
+                }, 1500);
+            }
+        }
+    </script>
+</body>
+</html>

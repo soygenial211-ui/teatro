@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Candado Numérico 4 Dígitos</title>
+    <style>
+        :root {
+            --slot-w: 60px; /* Reducido un poco para que quepan 4 cómodamente */
+            --slot-h: 80px;
+            --gold: #d4af37;
+            --panel: #2a2a2a;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            touch-action: none;
+        }
+
+        .lock-interface {
+            background: var(--panel);
+            padding: 30px;
+            border-radius: 20px;
+            border: 3px solid #444;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            text-align: center;
+        }
+
+        .combination-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slot-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            background: #444;
+            color: var(--gold);
+            border: 1px solid var(--gold);
+            border-radius: 5px;
+            width: 40px;
+            height: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+        }
+
+        .nav-btn:active { background: var(--gold); color: #000; }
+
+        .slot-window {
+            width: var(--slot-w);
+            height: var(--slot-h);
+            overflow: hidden;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+            position: relative;
+            cursor: grab;
+        }
+
+        .slot-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            transition: transform 0.3s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+        }
+
+        .slot-list li {
+            width: var(--slot-w);
+            height: var(--slot-h);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            font-weight: bold;
+            color: #111;
+        }
+
+        #check-btn {
+            margin-top: 35px;
+            padding: 12px 25px;
+            background: var(--gold);
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            text-transform: uppercase;
+        }
+
+        #check-btn:hover { filter: brightness(1.2); }
+
+        #status {
+            margin-top: 15px;
+            height: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="lock-interface">
+    <div class="combination-row">
+        <div id="lock-slots-container" style="display:flex; gap:12px;"></div>
+    </div>
+    
+    <button id="check-btn">VERIFICAR CÓDIGO</button>
+    <div id="status"></div>
+</div>
+
+<script>
+    // CONFIGURACIÓN INICIAL (Ahora con 4 arrays)
+    const config = {
+        slots: [
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        ],
+        key: "1234" // Combinación por defecto
+    };
+
+    const currentPos = [0, 0, 0, 0];
+    const itemH = 80;
+    const container = document.getElementById('lock-slots-container');
+
+    // Función para crear la interfaz
+    function createLock() {
+        container.innerHTML = ""; // Limpiar por si se reinicia
+        config.slots.forEach((nums, i) => {
+            const col = document.createElement('div');
+            col.className = 'slot-column';
+
+            const btnUp = document.createElement('div');
+            btnUp.className = 'nav-btn';
+            btnUp.innerHTML = '▲';
+            btnUp.onclick = () => moveSlot(i, -1);
+
+            const win = document.createElement('div');
+            win.className = 'slot-window';
+            
+            const list = document.createElement('ul');
+            list.className = 'slot-list';
+            list.id = `s${i}`;
+            
+            nums.forEach(n => {
+                const li = document.createElement('li');
+                li.textContent = n;
+                list.appendChild(li);
+            });
+
+            const btnDown = document.createElement('div');
+            btnDown.className = 'nav-btn';
+            btnDown.innerHTML = '▼';
+            btnDown.onclick = () => moveSlot(i, 1);
+
+            win.appendChild(list);
+            col.appendChild(btnUp);
+            col.appendChild(win);
+            col.appendChild(btnDown);
+            container.appendChild(col);
+
+            // Eventos de Scroll y Touch (mantenidos de tu código original)
+            win.onwheel = (e) => {
+                e.preventDefault();
+                moveSlot(i, e.deltaY > 0 ? 1 : -1);
+            };
+
+            let startY = 0;
+            win.onmousedown = (e) => startY = e.clientY;
+            win.ontouchstart = (e) => startY = e.touches[0].clientY;
+
+            const handleEnd = (endY) => {
+                const diff = startY - endY;
+                if (Math.abs(diff) > 15) moveSlot(i, diff > 0 ? 1 : -1);
+            };
+
+            win.onmouseup = (e) => handleEnd(e.clientY);
+            win.ontouchend = (e) => handleEnd(e.changedTouches[0].clientY);
+        });
+    }
+
+    function moveSlot(idx, dir) {
+        const list = document.getElementById(`s${idx}`);
+        const total = config.slots[idx].length;
+        currentPos[idx] = (currentPos[idx] + dir + total) % total;
+        list.style.transform = `translateY(-${currentPos[idx] * itemH}px)`;
+    }
+
+    // Lógica de verificación
+    // Busca esta sección en tu Candado.html
+document.getElementById('check-btn').onclick = () => {
+    const result = currentPos.map((pos, i) => config.slots[i][pos]).join("");
+    const status = document.getElementById('status');
+    
+    if (result === config.key) {
+        status.textContent = "🔓 ACCESO CONCEDIDO";
+        status.style.color = "#2ecc71";
+
+        // --- INICIO DE LA LÓGICA DE REGRESO ---
+        // 1. Obtenemos la referencia del juego principal (padre)
+        const padre = window.parent;
+
+        // 2. Verificamos que el padre tenga la información de la interacción
+        if (padre && padre.interaccionActual) {
+            const interActual = padre.interaccionActual;
+
+            // 3. Ejecutamos la recompensa (dar objeto, marcar como completado, etc.)
+            padre.completarAccion(interActual.data, interActual.lugar, false);
+
+            // 4. Cerramos el puzzle después de un momento para que vean el mensaje de éxito
+            setTimeout(() => {
+                padre.cerrarPuzzle();
+            }, 1500);
+        }
+        // --- FIN DE LA LÓGICA DE REGRESO ---
+
+    } else {
+        status.textContent = "🔒 CÓDIGO ERRÓNEO";
+        status.style.color = "#e74c3c";
+        setTimeout(() => status.textContent = "", 2000);
+    }
+};
+
+    // --- COMUNICACIÓN EXTERNA ---
+    // Escucha instrucciones de otros HTML (vía iframe o window.open)
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'INICIAR_PUZZLE') {
+        // Para el candado, la config es directamente el código
+        config.key = event.data.config.toString();
+        console.log("Candado listo con clave:", config.key);
+    }
+});
+
+function finalizarPuzzle() {
+    const padre = window.parent;
+    if (padre && padre.interaccionActual) {
+        padre.completarAccion(padre.interaccionActual.data, padre.interaccionActual.lugar, false);
+        setTimeout(() => padre.cerrarPuzzle(), 1000);
+    }
+}
+    createLock();
+</script>
+
+</body>
+</html>

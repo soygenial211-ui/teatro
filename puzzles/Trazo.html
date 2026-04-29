@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Terminal de Alta Tensión - Hotel</title>
+    <style>
+        :root {
+            --bg: #000000; /* Fondo negro absoluto para máximo contraste */
+            --wire-core: #ffffff; /* Gris metálico claro para el camino */
+            --wire-glow: rgba(0, 255, 0, 0.2); /* Resplandor neón suave */
+            --accent: #0f8; /* Verde neón brillante para el núcleo activo */
+            --idle: #fa0; /* Ámbar para el núcleo inactivo */
+            --danger: #f33; /* Rojo para fallos */
+        }
+
+        body {
+            background: #050505; /* Fondo de la página ligeramente gris */
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            touch-action: none;
+            user-select: none;
+        }
+
+        #ui { text-align: center; margin-bottom: 15px; max-width: 90vw; }
+        #msg { font-weight: bold; font-size: 1.1rem; height: 1.2em; letter-spacing: 2px; text-transform: uppercase; }
+
+        #canvas-container { 
+            border: 2px solid #222; 
+            background: var(--bg); /* Fondo negro absoluto del puzzle */
+            position: relative; 
+            box-shadow: 0 0 50px rgba(0,255,136,0.1); /* Brillo ambiental en el contenedor */
+            line-height: 0;
+        }
+        canvas { display: block; touch-action: none; }
+
+        /* Efecto de sacudida */
+        .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(3px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+            40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+
+        .menu {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            background: #111; 
+            color: #aaa; 
+            border: 1px solid #444;
+            padding: 10px 18px; 
+            cursor: pointer; 
+            font-family: inherit;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.2s ease;
+        }
+
+        button:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px var(--wire-glow); }
+        button:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div id="msg">SISTEMA EN ESPERA...</div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="circuitCanvas"></canvas>
+    </div>
+
+<script>
+    const canvas = document.getElementById('circuitCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('canvas-container');
+    const msg = document.getElementById('msg');
+
+    // --- CONFIGURACIÓN TÉCNICA (CON TOLERANCIA FIJA 0.7) ---
+    let config = {
+        pathWidth: 27, // Ligeramente más grueso para visibilidad
+        tolerance: 0.7, 
+        points: []
+    };
+
+    let isDragging = false;
+    let playerPos = { x: 0, y: 0 };
+    let winActive = false;
+
+    // --- GENERADOR DE CAMINOS MATRIZ 8x4 ---
+    function generarNivel(numFilas) {
+        winActive = false;
+        isDragging = false;
+        const pts = [];
+        const cols = 4; // Usamos 4 columnas para zig-zag horizontal
+        
+        const cellW = 400 / cols;
+        const cellH = 500 / numFilas;
+
+        for (let r = 0; r < numFilas; r++) {
+            const randomCol = Math.floor(Math.random() * cols);
+            // Centro de la celda con margen de seguridad
+            const x = (randomCol * cellW) + (cellW / 2);
+            const y = (r * cellH) + (cellH / 2);
+            pts.push({ x, y });
+        }
+
+        config.points = pts;
+        initGame();
+    }
+
+    function initGame() {
+        const maxWidth = Math.min(window.innerWidth * 0.9, 400);
+        const ratio = maxWidth / 400;
+        canvas.width = 400 * ratio;
+        canvas.height = 500 * ratio;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0); // Escala el dibujo virtual de 400x500
+        
+        playerPos = { x: config.points[0].x, y: config.points[0].y };
+        msg.textContent = "LLEVA LA PELOTITA HASTA EL FIN DEL CAMINO";
+        msg.style.color = "#ffffff";
+        draw();
+    }
+
+    // --- MOTOR DE DIBUJO CON CONTRASTE ALTO ---
+    function draw() {
+        // Fondo negro absoluto
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, 400, 500);
+
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        // 1. DIBUJAR RESPLANDOR DEL CABLE (Glow)
+        ctx.strokeStyle = "rgba(0, 255, 136, 0.15)";
+        ctx.lineWidth = config.pathWidth + 6; // Resplandor exterior
+        ctx.beginPath();
+        config.points.forEach((p, i) => {
+            if(i === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+
+        // 2. DIBUJAR NÚCLEO DEL CABLE (Camino visible)
+        ctx.strokeStyle = "#ffffff"; // Gris metálico medio/claro
+        ctx.lineWidth = config.pathWidth + 0;
+        // Efecto de sombra para realzar contraste metálico
+        ctx.shadowColor = "445566";
+        ctx.shadowBlur = 4;
+        ctx.stroke();
+        ctx.shadowBlur = 0; // Reset sombra
+
+        // ---------------------------------------------------------
+        // 3. META (Nodo de salida) - AHORA UN CUADRADO AZUL
+        // ---------------------------------------------------------
+        const last = config.points[config.points.length - 1];
+        
+        // Configuración del estilo visual
+        ctx.fillStyle = "#0077ff"; // Azul eléctrico llamativo
+        ctx.shadowBlur = 20;       // Resplandor neón fuerte
+        ctx.shadowColor = "#0077ff";
+        
+        // Dibujar el cuadrado centrado en el punto
+        const tamanoCuadrado = 28; // Ancho y alto del cuadrado
+        ctx.fillRect(
+            last.x - tamanoCuadrado / 2, // Centrar X
+            last.y - tamanoCuadrado / 2, // Centrar Y
+            tamanoCuadrado, 
+            tamanoCuadrado
+        );
+        
+        // Resetear sombra para no afectar a los siguientes dibujos
+        ctx.shadowBlur = 0;
+        // ---------------------------------------------------------
+
+        // 4. JUGADOR (Núcleo)
+        ctx.fillStyle = isDragging ? "#0f8" : "#fa0"; // Verde neón o Ámbar
+        if(isDragging) {
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = "#0f8";
+        }
+        ctx.beginPath();
+        ctx.arc(playerPos.x, playerPos.y, 11, 0, Math.PI*2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    // Distancia punto a segmento (Lógica matemática)
+    function getDistToSegment(p, v, w) {
+        const l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2);
+        if (l2 == 0) return Math.hypot(p.x - v.x, p.y - v.y);
+        let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
+    }
+
+    // --- MANEJO DE INPUTS (HÍBRIDO PC/MÓVIL) ---
+    function handleInput(e) {
+        if(winActive) return;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        // Ajuste de coordenadas relativo al reescalado del canvas
+        const scale = 400 / rect.width;
+        const x = (clientX - rect.left) * scale;
+        const y = (clientY - rect.top) * scale;
+
+        if (e.type === 'mousedown' || e.type === 'touchstart') {
+            // Detección de proximidad para iniciar arrastre
+            if (Math.hypot(x - playerPos.x, y - playerPos.y) < 45) isDragging = true;
+        } 
+        
+        else if ((e.type === 'mousemove' || e.type === 'touchmove') && isDragging) {
+            let minDist = Infinity;
+            for (let i = 0; i < config.points.length - 1; i++) {
+                const d = getDistToSegment({x, y}, config.points[i], config.points[i+1]);
+                if (d < minDist) minDist = d;
+            }
+
+            // Detección de falla por proximidad al eje central (con 0.7 de tolerancia)
+            if (minDist < (config.pathWidth / 2) * config.tolerance) {
+                playerPos = { x, y };
+                // Verificar Victoria (llegar al último nodo)
+                const last = config.points[config.points.length - 1];
+                if (Math.hypot(x - last.x, y - last.y) < 20) win();
+            } else {
+                fail();
+            }
+            draw();
+        }
+    }
+
+    function fail() {
+        isDragging = false;
+        container.classList.add('shake');
+        msg.textContent = "ERROR DE CONEXIÓN";
+        msg.style.color = "var(--danger)";
+        setTimeout(() => {
+            playerPos = { x: config.points[0].x, y: config.points[0].y };
+            container.classList.remove('shake');
+            msg.textContent = "REINTENTANDO VÍNCULO...";
+            msg.style.color = "#aaa";
+            draw();
+        }, 600);
+    }
+
+    function win() {
+    isDragging = false;
+    winActive = true;
+    msg.textContent = "ACCESO CONCEDIDO";
+    msg.style.color = "#0f8";
+
+    // --- LLAMADA AL PADRE ---
+    const padre = window.parent;
+    if (padre && padre.interaccionActual) {
+        padre.completarAccion(padre.interaccionActual.data, padre.interaccionActual.lugar, false);
+        setTimeout(() => {
+            padre.cerrarPuzzle();
+        }, 1500);
+    }
+}
+
+    // --- LISTENERS ---
+    canvas.addEventListener('mousedown', handleInput);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
+    window.addEventListener('mousemove', handleInput);
+    window.addEventListener('touchmove', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('touchend', () => isDragging = false);
+    window.addEventListener('resize', initGame);
+
+    // Arrancar con nivel normal
+    generarNivel(7);
+
+
+    window.addEventListener('message', (event) => {
+    if (event.data.type === 'INICIAR_PUZZLE') {
+        // Para el trazo, la config es un objeto
+        const c = event.data.config;
+        if(c) {
+            velocidadGlobal = c.velocidad || 1;
+            puntosNecesarios = c.puntos || 3;
+        }
+    }
+});
+
+function finalizarPuzzle() {
+    const padre = window.parent;
+    if (padre && padre.interaccionActual) {
+        padre.completarAccion(padre.interaccionActual.data, padre.interaccionActual.lugar, false);
+        setTimeout(() => padre.cerrarPuzzle(), 1000);
+    }
+}
+</script>
+</body>
+</html>
