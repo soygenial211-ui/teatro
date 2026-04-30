@@ -16,6 +16,13 @@ body, html {
     position: fixed; 
 }
 
+body {
+    /* Añade esto para respetar el espacio de la barra si el Fullscreen falla */
+    padding-top: env(safe-area-inset-top);
+    height: var(--vh);
+    background-color: #000; /* Fondo negro puro para que no se vea el "corte" */
+}
+
 #pantalla-inicio, 
 #vista-pisos, 
 #vista-mapa, 
