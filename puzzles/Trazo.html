@@ -102,45 +102,46 @@
     let winActive = false;
 
     // --- GENERADOR DE CAMINOS MATRIZ 8x4 ---
-    function generarNivel(numFilas) {
-        winActive = false;
-        isDragging = false;
-        const pts = [];
-        const cols = 4; // Usamos 4 columnas para zig-zag horizontal
-        
-        const cellW = 400 / cols;
-        const cellH = 500 / numFilas;
+    function generarNivel(numColumnas) {
+    winActive = false;
+    isDragging = false;
+    const pts = [];
+    const filas = 4; // Variación de altura para el zig-zag
+    
+    const cellW = 600 / numColumnas;
+    const cellH = 350 / filas;
 
-        for (let r = 0; r < numFilas; r++) {
-            const randomCol = Math.floor(Math.random() * cols);
-            // Centro de la celda con margen de seguridad
-            const x = (randomCol * cellW) + (cellW / 2);
-            const y = (r * cellH) + (cellH / 2);
-            pts.push({ x, y });
-        }
-
-        config.points = pts;
-        initGame();
+    for (let c = 0; c < numColumnas; c++) {
+        const randomFila = Math.floor(Math.random() * filas);
+        // Ahora avanzamos en X, y variamos aleatoriamente en Y
+        const x = (c * cellW) + (cellW / 2);
+        const y = (randomFila * cellH) + (cellH / 2);
+        pts.push({ x, y });
     }
+
+    config.points = pts;
+    initGame();
+}
 
     function initGame() {
-        const maxWidth = Math.min(window.innerWidth * 0.9, 400);
-        const ratio = maxWidth / 400;
-        canvas.width = 400 * ratio;
-        canvas.height = 500 * ratio;
-        ctx.setTransform(ratio, 0, 0, ratio, 0, 0); // Escala el dibujo virtual de 400x500
-        
-        playerPos = { x: config.points[0].x, y: config.points[0].y };
-        msg.textContent = "LLEVA LA PELOTITA HASTA EL FIN DEL CAMINO";
-        msg.style.color = "#ffffff";
-        draw();
-    }
+    // Cambiamos a proporciones horizontales (ancho > alto)
+    const maxWidth = Math.min(window.innerWidth * 0.9, 600);
+    const ratio = maxWidth / 600;
+    canvas.width = 600 * ratio;
+    canvas.height = 350 * ratio;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0); // Ahora el área virtual es 600x350
+    
+    playerPos = { x: config.points[0].x, y: config.points[0].y };
+    msg.textContent = "ESTABLECE LA CONEXIÓN (IZQUIERDA A DERECHA)";
+    msg.style.color = "#ffffff";
+    draw();
+}
 
     // --- MOTOR DE DIBUJO CON CONTRASTE ALTO ---
     function draw() {
         // Fondo negro absoluto
         ctx.fillStyle = "#000000";
-        ctx.fillRect(0, 0, 400, 500);
+    ctx.fillRect(0, 0, 600, 350);
 
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
@@ -211,14 +212,14 @@
     // --- MANEJO DE INPUTS (HÍBRIDO PC/MÓVIL) ---
     function handleInput(e) {
         if(winActive) return;
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        
-        // Ajuste de coordenadas relativo al reescalado del canvas
-        const scale = 400 / rect.width;
-        const x = (clientX - rect.left) * scale;
-        const y = (clientY - rect.top) * scale;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    // Usamos 600 porque es nuestro nuevo ancho virtual
+    const scale = 600 / rect.width; 
+    const x = (clientX - rect.left) * scale;
+    const y = (clientY - rect.top) * scale;
 
         if (e.type === 'mousedown' || e.type === 'touchstart') {
             // Detección de proximidad para iniciar arrastre
@@ -285,7 +286,7 @@
     window.addEventListener('resize', initGame);
 
     // Arrancar con nivel normal
-    generarNivel(7);
+    generarNivel(6);
 
 
     window.addEventListener('message', (event) => {
