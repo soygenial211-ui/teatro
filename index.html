@@ -2,8 +2,15 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Teatro de las marionetas</title>
+    <!-- Optimización para iOS (Safari) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- Optimización para Android (Chrome) -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0a">
     <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="estilo.css">
 </head>
@@ -98,12 +105,24 @@
         }
 
         function iniciarJuego() {
-            const input = document.getElementById('input-usuario');
-            if (input.value.trim() === "") return;
-            nombreJugador = input.value.trim();
-            document.getElementById('pantalla-inicio').classList.add('hidden');
-            saltarASalaOPrincipal();
-        }
+    const input = document.getElementById('input-usuario');
+    if (input.value.trim() === "") return;
+    nombreJugador = input.value.trim();
+
+    // --- NUEVO: FORZAR PANTALLA COMPLETA ---
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) { /* Safari */
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { /* IE11 */
+        elem.msRequestFullscreen();
+    }
+    // ---------------------------------------
+
+    document.getElementById('pantalla-inicio').classList.add('hidden');
+    saltarASalaOPrincipal();
+}
 
         function saltarASalaOPrincipal() {
             if (ID_SALA_INICIAL) {
