@@ -1,19 +1,39 @@
 :root {
-            --oro: #d1ccc0;
-            --fondo: #0a0a0a;
-            --panel: rgba(20, 20, 20, 0.98);
-        }
+    --oro: #d1ccc0;
+    --fondo: #0a0a0a;
+    --panel: rgba(20, 20, 20, 0.98);
+    --vh: 100vh; /* Valor por defecto */
+}
 
-        body, html {
-            margin: 0; padding: 0;
-            font-family: 'Spectral', cursive;
-            background-color: var(--fondo); color: white;
-            height: 100%; width: 100%; overflow: hidden;
-        }
+body, html {
+    margin: 0; padding: 0;
+    font-family: 'Spectral', cursive;
+    background-color: var(--fondo); color: white;
+    /* Cambio crítico: usar la variable calculada y fijar posición */
+    height: var(--vh); 
+    width: 100vw; 
+    overflow: hidden;
+    position: fixed; 
+}
+
+#pantalla-inicio, 
+#vista-pisos, 
+#vista-mapa, 
+#contenedor-puzzle, 
+#pantalla-inventario, 
+#modal-interaccion {
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    /* Esta es la clave para la responsividad en móvil */
+    height: var(--vh); 
+    z-index: 5000;
+}
 
         /* --- PANTALLA DE INICIO --- */
         #pantalla-inicio {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            
             background: radial-gradient(circle, #1a1a1a 0%, #000 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 5000;
@@ -27,7 +47,7 @@
 
         /* --- NAVEGACIÓN MAPA Y PISOS --- */
         #vista-pisos, #vista-mapa {
-            position: absolute; width: 100%; height: 100%;
+           
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             background-size: cover;
             background-position: center;
@@ -126,7 +146,7 @@
         #btn-abrir-inv:hover { background: var(--oro); color: black; }
 
         #pantalla-inventario {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            
             background: rgba(0, 0, 0, 0.95); z-index: 4000;
             display: none; flex-direction: column; align-items: center; justify-content: center;
         }
@@ -167,7 +187,7 @@
 
         /* --- MODALES Y PUZZLES --- */
         #modal-interaccion {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            
             background: rgba(0,0,0,0.9); z-index: 5000;
             display: none; align-items: center; justify-content: center;
         }
@@ -178,7 +198,7 @@
         }
 
         #contenedor-puzzle {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            
             background: black; z-index: 3000; display: none;
         }
 
