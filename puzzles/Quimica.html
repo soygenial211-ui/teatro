@@ -18,12 +18,11 @@
             font-family: 'Courier New', monospace;
             margin: 0;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
             min-height: 100vh;
             overflow: hidden;
             touch-action: none;
+            flex-direction: row; justify-content: space-evenly;
         }
 
         #ui-status {
@@ -35,6 +34,7 @@
             max-width: 500px;
             background: var(--panel);
             box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            position: absolute; top: 10px; width: 50%;
         }
 
         #msg { font-size: 1.2rem; margin-bottom: 5px; }
@@ -75,13 +75,13 @@
         /* Estante y Botellas - MÁS GRANDES */
         .shelf {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(2, 1fr); /* Dos columnas de botellas */
+    max-width: 40vw;
             gap: 20px;
             padding: 30px;
             background: #1a1a1a;
             border-bottom: 12px solid #000;
             border-radius: 15px;
-            max-width: 95vw;
             margin-top: 20px;
         }
 
