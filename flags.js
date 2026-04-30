@@ -1,5 +1,5 @@
 let FLAGS = { 
-    "luces_sotano": true, 
-    "luces_escenario": true, 
+    "luces_sotano": false, 
+    "luces_escenario": false, 
     "musica_on": false,
 };
