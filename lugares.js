@@ -416,7 +416,7 @@ const LUGARES = [
           "ancho": "11%",
           "alto": "30%"
         },
-        "mensajeGeneral": "Descripción del objeto...",
+        "mensajeGeneral": "VOTOS DE SILENCIO. Un drama psicológico de Alejandro Vallaure. Tres extraños, un monasterio en ruinas y una promesa de la infancia que amenaza con destruirlos. ¿Cuánto tiempo puedes sostener una verdad antes de que se convierta en veneno? Dirección: Victoria R. Kent. Duración: 90 min.",
         "mensajes": {
           "faltaItem": "",
           "faltaFlag": "",
