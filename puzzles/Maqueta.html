@@ -2,291 +2,209 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Votos de Silencio - Panel Móvil</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Votos de Silencio - Grid Móvil</title>
     <style>
         :root {
             --bg-ui: #f4f1ea;
             --card-border: #8d7d66;
             --accent-red: #b22222;
             --text-main: #2c2c2c;
+            --accent-gold: #d4af37;
         }
 
         body {
             background-color: #dcd7c9;
             color: var(--text-main);
-            font-family: sans-serif;
+            font-family: serif;
+            margin: 0;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 0;
-            padding: 10px;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        h1 { 
-            font-family: serif;
-            color: var(--accent-red); 
-            font-size: 1.8em;
-            margin: 10px 0 5px 0;
-            text-align: center;
-        }
+        .header { text-align: center; margin-bottom: 10px; }
+        h1 { color: var(--accent-red); margin: 0; font-size: 1.5rem; }
 
-        .instruction {
-            font-style: italic;
-            font-size: 0.9em;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .game-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Dos columnas: invitados y sentencias */
-    gap: 10px;
-}
-
-        @media (min-width: 768px) {
-            .game-container { flex-direction: row; align-items: flex-start; }
-            .column { flex: 1; }
-        }
-
-        .column-header {
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            font-size: 0.9em;
-            color: #5d5448;
-        }
-
-        /* Contenedor de origen de personajes */
-        #characters-pool {
+        /* Grid de 3, 2, 2 */
+        .game-grid {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(6, 1fr); /* Sistema de 6 columnas para manejar 3 y 2 */
             gap: 10px;
-            background: rgba(0,0,0,0.05);
-            padding: 10px;
-            border-radius: 8px;
-            
+            width: 100%;
+            max-width: 900px;
         }
 
-        /* Ficha del Personaje */
-        .character {
+        /* Configuración de las filas para 3, 2 y 2 */
+        .char-card { grid-column: span 2; } /* Fila 1: 3 cartas (2+2+2 = 6) */
+        .row-2 { grid-column: span 3; }    /* Fila 2: 2 cartas (3+3 = 6) */
+        .row-3 { grid-column: span 3; }    /* Fila 3: 2 cartas (3+3 = 6) */
+
+        .char-card {
             background: var(--bg-ui);
             border: 2px solid var(--card-border);
-            padding: 8px;
-            cursor: grab;
-            border-radius: 4px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            height: 70px; /* Altura fija para encajar perfecto */
-            box-sizing: border-box;
-        }
-
-        .character strong { font-size: 0.85em; display: block; color: var(--accent-red); }
-        .character-detail { font-size: 0.7em; color: #666; line-height: 1.1; }
-
-        /* Slots de Pecados */
-        .sin-slots-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .sin-slot {
-            width: 100%;
-            height: 90px; /* Un poco más alto que el personaje para el label */
-            background: #e9e5d8;
-            border: 2px dashed #b7b09e;
             border-radius: 8px;
-            position: relative;
+            padding: 8px;
             display: flex;
-            align-items: flex-end; /* Deja espacio para el icono arriba */
-            justify-content: center;
-            padding: 5px;
-            box-sizing: border-box;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
         }
 
-        .sin-label-box {
-            position: absolute;
-            top: 5px;
-            left: 10px;
+        .char-info { text-align: center; margin-bottom: 8px; }
+        .char-info strong { color: var(--accent-red); display: block; font-size: 0.9rem; }
+        .char-info span { font-size: 0.7rem; font-style: italic; color: #666; }
+
+        /* Selector de Pecados */
+        .selector {
             display: flex;
             align-items: center;
-            gap: 8px;
-            pointer-events: none;
-        }
-
-        .sin-icon { font-size: 1.2em; }
-        .sin-name { font-weight: bold; font-size: 0.8em; text-transform: uppercase; color: #777; }
-
-        /* Cuando el personaje cae dentro */
-        .sin-slot .character {
+            justify-content: space-between;
             width: 100%;
-            height: 60px; /* Ajuste para que quepa bajo el label del pecado */
-            margin: 0;
-            box-shadow: none;
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+            padding: 4px;
         }
 
-        .on-drag-over { background: #fff; border-color: var(--accent-red); }
-
-        #message {
-            margin: 15px 0;
-            font-weight: bold;
-            text-align: center;
-            min-height: 20px;
+        .arrow {
+            font-size: 1.5rem;
+            color: var(--accent-red);
+            cursor: pointer;
+            padding: 0 10px;
+            user-select: none;
         }
+
+        .sin-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .sin-icon { font-size: 1.2rem; }
+        .sin-name { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; color: #555; }
 
         .btn-check {
+            margin-top: 20px;
             background: var(--accent-red);
             color: white;
             border: none;
-            padding: 15px;
-            width: 100%;
-            max-width: 300px;
-            font-size: 1em;
+            padding: 15px 40px;
+            font-size: 1.1rem;
             font-weight: bold;
-            cursor: pointer;
             border-radius: 50px;
-            margin-bottom: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            width: 80%;
+            max-width: 400px;
         }
+
+        #message { margin: 10px; font-weight: bold; height: 20px; }
     </style>
 </head>
 <body>
 
-    <h1>VOTOS DE SILENCIO</h1>
-    <p class="instruction">"Cada secreto busca su asiento."</p>
+    <div class="header">
+        <h1>VOTOS DE SILENCIO</h1>
+    </div>
 
-    <div class="game-container">
-        <div class="column">
-            <div class="column-header">Invitados</div>
-            <div id="characters-pool">
-                <div class="character" draggable="true" id="char1" data-target="gula">
-                    <strong>El Cocinero</strong>
-                    <span class="character-detail">Saboreó la traición.</span>
-                </div>
-                <div class="character" draggable="true" id="char2" data-target="avaricia">
-                    <strong>El Padrino</strong>
-                    <span class="character-detail">Manos ajenas.</span>
-                </div>
-                <div class="character" draggable="true" id="char3" data-target="soberbia">
-                    <strong>La Madre</strong>
-                    <span class="character-detail">Espejo roto.</span>
-                </div>
-                <div class="character" draggable="true" id="char4" data-target="pereza">
-                    <strong>El Anciano</strong>
-                    <span class="character-detail">Testigo inmóvil.</span>
-                </div>
-                <div class="character" draggable="true" id="char5" data-target="envidia">
-                    <strong>El Chofer</strong>
-                    <span class="character-detail">Deseo al volante.</span>
-                </div>
-                <div class="character" draggable="true" id="char6" data-target="lujuria">
-                    <strong>El Novio</strong>
-                    <span class="character-detail">Aroma prohibido.</span>
-                </div>
-                <div class="character" draggable="true" id="char7" data-target="ira">
-                    <strong>La Novia</strong>
-                    <span class="character-detail">Sangre y fuego.</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="column">
-            <div class="column-header">Sentencias</div>
-            <div class="sin-slots-container">
-                <div class="sin-slot" data-sin="gula"><div class="sin-label-box"><span class="sin-icon">🍎</span><span class="sin-name">Gula</span></div></div>
-                <div class="sin-slot" data-sin="avaricia"><div class="sin-label-box"><span class="sin-icon">💰</span><span class="sin-name">Avaricia</span></div></div>
-                <div class="sin-slot" data-sin="soberbia"><div class="sin-label-box"><span class="sin-icon">💎</span><span class="sin-name">Soberbia</span></div></div>
-                <div class="sin-slot" data-sin="pereza"><div class="sin-label-box"><span class="sin-icon">☁️</span><span class="sin-name">Pereza</span></div></div>
-                <div class="sin-slot" data-sin="envidia"><div class="sin-label-box"><span class="sin-icon">🐍</span><span class="sin-name">Envidia</span></div></div>
-                <div class="sin-slot" data-sin="lujuria"><div class="sin-label-box"><span class="sin-icon">💋</span><span class="sin-name">Lujuria</span></div></div>
-                <div class="sin-slot" data-sin="ira"><div class="sin-label-box"><span class="sin-icon">🗡️</span><span class="sin-name">Ira</span></div></div>
-            </div>
-        </div>
+    <div class="game-grid" id="mainGrid">
+        <!-- Generado por JS -->
     </div>
 
     <div id="message"></div>
-    <button class="btn-check" onclick="checkSolution()">VALIDAR</button>
+    <button class="btn-check" onclick="checkSolution()">VERIFICAR RESPUESTA</button>
 
-    <script>
+<script>
+    const PECADOS = [
+        { id: "gula", nombre: "Gula", icono: "🍎" },
+        { id: "avaricia", nombre: "Avaricia", icono: "💰" },
+        { id: "soberbia", nombre: "Soberbia", icono: "💎" },
+        { id: "pereza", nombre: "Pereza", icono: "☁️" },
+        { id: "envidia", nombre: "Envidia", icono: "🐍" },
+        { id: "lujuria", nombre: "Lujuria", icono: "💋" },
+        { id: "ira", nombre: "Ira", icono: "🗡️" }
+    ];
 
-        document.addEventListener('touchmove', function(e) {
-    if (e.target.closest('.character')) {
-        e.preventDefault();
+    const PERSONAJES = [
+        { id: 0, nombre: "El Cocinero", detalle: "Saboreó la traición.", meta: "gula" },
+        { id: 1, nombre: "El Padrino", detalle: "Manos ajenas.", meta: "avaricia" },
+        { id: 2, nombre: "La Madre", detalle: "Espejo roto.", meta: "soberbia" },
+        { id: 3, nombre: "El Anciano", detalle: "Testigo inmóvil.", meta: "pereza" },
+        { id: 4, nombre: "El Chofer", detalle: "Deseo al volante.", meta: "envidia" },
+        { id: 5, nombre: "El Novio", detalle: "Aroma prohibido.", meta: "lujuria" },
+        { id: 6, nombre: "La Novia", detalle: "Sangre y fuego.", meta: "ira" }
+    ];
+
+    // Estado actual: cada personaje empieza con un pecado aleatorio o el primero
+    let estado = PERSONAJES.map(() => 0); 
+
+    function render() {
+        const grid = document.getElementById('mainGrid');
+        grid.innerHTML = '';
+
+        PERSONAJES.forEach((p, index) => {
+            const card = document.createElement('div');
+            card.className = 'char-card';
+            
+            // Aplicar clases de fila para el grid 3, 2, 2
+            if (index >= 3 && index <= 4) card.classList.add('row-2');
+            if (index >= 5) card.classList.add('row-3');
+
+            const pecadoActual = PECADOS[estado[index]];
+
+            card.innerHTML = `
+                <div class="char-info">
+                    <strong>${p.nombre}</strong>
+                    <span>${p.detalle}</span>
+                </div>
+                <div class="selector">
+                    <div class="arrow" onclick="changeSin(${index}, -1)">&#9664;</div>
+                    <div class="sin-display">
+                        <span class="sin-icon">${pecadoActual.icono}</span>
+                        <span class="sin-name">${pecadoActual.nombre}</span>
+                    </div>
+                    <div class="arrow" onclick="changeSin(${index}, 1)">&#9654;</div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
     }
-}, { passive: false });
 
-        const characters = document.querySelectorAll('.character');
-        const slots = document.querySelectorAll('.sin-slot');
-        let draggedItem = null;
+    function changeSin(charIndex, dir) {
+        estado[charIndex] = (estado[charIndex] + dir + PECADOS.length) % PECADOS.length;
+        render();
+    }
 
-        // Soporte para Touch (Móviles)
-        characters.forEach(char => {
-            char.addEventListener('dragstart', function() {
-                draggedItem = this;
-                this.style.opacity = '0.4';
-            });
-            char.addEventListener('dragend', function() {
-                this.style.opacity = '1';
-            });
+    function checkSolution() {
+        let aciertos = 0;
+        PERSONAJES.forEach((p, i) => {
+            if (PECADOS[estado[i]].id === p.meta) aciertos++;
         });
 
-        slots.forEach(slot => {
-            slot.addEventListener('dragover', e => e.preventDefault());
-            slot.addEventListener('dragenter', function() { this.classList.add('on-drag-over'); });
-            slot.addEventListener('dragleave', function() { this.classList.remove('on-drag-over'); });
-            slot.addEventListener('drop', function() {
-                this.classList.remove('on-drag-over');
-                const existingChar = this.querySelector('.character');
-                if (existingChar) document.getElementById('characters-pool').appendChild(existingChar);
-                this.appendChild(draggedItem);
-            });
-        });
-
-        function checkSolution() {
-            let correct = 0;
-            document.querySelectorAll('.sin-slot').forEach(slot => {
-                const char = slot.querySelector('.character');
-                if (char && char.getAttribute('data-target') === slot.getAttribute('data-sin')) correct++;
-            });
-            
-            const msg = document.getElementById('message');
-            
-            if (correct === 7) {
-                msg.style.color = "green";
-                msg.innerText = "¡VOTOS CUMPLIDOS!";
-                finalizarPuzzle(); // <--- Llamada a la conexión
-            } else {
-                msg.style.color = "#b22222";
-                msg.innerText = "Aciertos: " + correct + "/7";
-            }
+        const msg = document.getElementById('message');
+        if (aciertos === 7) {
+            msg.style.color = "green";
+            msg.innerText = "¡TODOS HAN CONFESADO!";
+            finalizarPuzzle();
+        } else {
+            msg.style.color = "var(--accent-red)";
+            msg.innerText = `Aciertos: ${aciertos} / 7`;
         }
+    }
 
-        // --- CONEXIÓN CON EL HOTEL (INDEX.HTML) ---
-        
-        window.addEventListener('message', (event) => {
-            if (event.data.type === 'INICIAR_PUZZLE') {
-                console.log("Maqueta lista y vinculada.");
-                // Aquí podrías usar event.data.config si necesitaras configurar algo inicial
-            }
-        });
-
-        function finalizarPuzzle() {
-            const padre = window.parent;
-            // Verificamos que exista el padre y la función de completar acción
-            if (padre && padre.interaccionActual) {
-                // Ejecuta la recompensa y lógica en el index.html
-                padre.completarAccion(padre.interaccionActual.data, padre.interaccionActual.lugar, false);
-                
-                // Cerramos el puzzle tras un pequeño delay para que el usuario vea el mensaje de éxito
-                setTimeout(() => {
-                    padre.cerrarPuzzle();
-                }, 1500);
-            }
+    function finalizarPuzzle() {
+        const padre = window.parent;
+        if (padre && padre.interaccionActual) {
+            padre.completarAccion(padre.interaccionActual.data, padre.interaccionActual.lugar, false);
+            setTimeout(() => padre.cerrarPuzzle(), 1500);
         }
-    </script>
+    }
+
+    render();
+</script>
 </body>
 </html>
