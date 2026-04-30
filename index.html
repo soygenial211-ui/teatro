@@ -2,15 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teatro de las marionetas</title>
-    <!-- Optimización para iOS (Safari) -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- Optimización para Android (Chrome) -->
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0a0a0a">
     <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="estilo.css">
 </head>
@@ -104,23 +97,26 @@
             else document.getElementById('pantalla-inicio').classList.remove('hidden');
         }
 
+        function activarPantallaCompleta() {
+    let elem = document.documentElement; // Selecciona toda la página
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(err => console.log(err));
+    } else if (elem.webkitRequestFullscreen) { /* Safari / iOS */
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { /* IE/Edge antiguo */
+        elem.msRequestFullscreen();
+    }
+}
+
         function iniciarJuego() {
     const input = document.getElementById('input-usuario');
     if (input.value.trim() === "") return;
     nombreJugador = input.value.trim();
-
-    // --- NUEVO: FORZAR PANTALLA COMPLETA ---
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) {
-        elem.requestFullscreen();
-    } else if (elem.webkitRequestFullscreen) { /* Safari */
-        elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) { /* IE11 */
-        elem.msRequestFullscreen();
-    }
-    // ---------------------------------------
-
     document.getElementById('pantalla-inicio').classList.add('hidden');
+    
+    // --- Llama a la función para ocultar las barras del navegador ---
+    activarPantallaCompleta();
+    
     saltarASalaOPrincipal();
 }
 
