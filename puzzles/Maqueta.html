@@ -40,12 +40,10 @@
         }
 
         .game-container {
-            display: flex;
-            flex-direction: column; /* Apilado en móvil por defecto */
-            gap: 20px;
-            width: 100%;
-            max-width: 900px;
-        }
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Dos columnas: invitados y sentencias */
+    gap: 10px;
+}
 
         @media (min-width: 768px) {
             .game-container { flex-direction: row; align-items: flex-start; }
@@ -64,11 +62,12 @@
         /* Contenedor de origen de personajes */
         #characters-pool {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            grid-template-columns: 1fr;
             gap: 10px;
             background: rgba(0,0,0,0.05);
             padding: 10px;
             border-radius: 8px;
+            
         }
 
         /* Ficha del Personaje */
@@ -213,6 +212,13 @@
     <button class="btn-check" onclick="checkSolution()">VALIDAR</button>
 
     <script>
+
+        document.addEventListener('touchmove', function(e) {
+    if (e.target.closest('.character')) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
         const characters = document.querySelectorAll('.character');
         const slots = document.querySelectorAll('.sin-slot');
         let draggedItem = null;
