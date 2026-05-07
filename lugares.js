@@ -1269,7 +1269,7 @@ const LUGARES = [
         "nombre": "Caja",
         "id": "objeto_241",
         "archivoPuzzle": "puzzles/Candado.html",
-        "configPuzzle": "8187",
+        "configPuzzle": "4135",
         "requisitos": {
           "item": null,
           "flag": null
