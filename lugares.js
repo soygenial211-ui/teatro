@@ -890,7 +890,7 @@ const LUGARES = [
           "ancho": "4%",
           "alto": "8%"
         },
-        "mensajeGeneral": "No le digas a nadie, pero creo haber descubierto la clave del maletin del director... Era algo como 7251, 7512 o 7521.\nNo se que guarde ahi como para tenerlo bajo llave",
+        "mensajeGeneral": "No le digas a nadie, pero creo haber descubierto la clave del maletin del director... Era algo como 1344, 1433 o 4311.\nNo se que guarde ahi como para tenerlo bajo llave",
         "mensajes": {
           "faltaItem": "",
           "faltaFlag": "",
@@ -1195,7 +1195,7 @@ const LUGARES = [
         "nombre": "Maletin",
         "id": "objeto_486",
         "archivoPuzzle": "puzzles/Candado.html",
-        "configPuzzle": "7521",
+        "configPuzzle": "1433",
         "requisitos": {
           "item": null,
           "flag": null
