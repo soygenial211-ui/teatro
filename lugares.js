@@ -1065,7 +1065,7 @@ const LUGARES = [
         },
         "mensajeGeneral": "",
         "mensajes": {
-          "faltaItem": "El juguete tiene una bateria de 9V... si tan solo tuviera un desarmador para abrilo y quitarla...",
+          "faltaItem": "El juguete tiene una bateria de 9V... si tan solo tuviera un desarmador especial para abrilo y quitarla...",
           "faltaFlag": "",
           "faltaAmbos": "",
           "mensajeExito": "",
